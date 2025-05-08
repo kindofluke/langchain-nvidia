@@ -56,7 +56,6 @@ class NVIDIAEmbeddings(BaseModel, Embeddings):
         ),
     )
     max_batch_size: int = Field(default=_DEFAULT_BATCH_SIZE)
-    requests_session: Optional[Session] = Field(default=None, description="Provide a custom session for requests to contact your endpoint")
 
     def __init__(self, **kwargs: Any):
         """
