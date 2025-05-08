@@ -12,6 +12,7 @@ from pydantic import (
 from langchain_nvidia_ai_endpoints._common import _NVIDIAClient
 from langchain_nvidia_ai_endpoints._statics import Model
 from langchain_nvidia_ai_endpoints.callbacks import usage_callback_var
+from requests import Session
 
 _DEFAULT_MODEL_NAME: str = "nvidia/nv-embedqa-e5-v5"
 _DEFAULT_BATCH_SIZE: int = 50
@@ -55,6 +56,7 @@ class NVIDIAEmbeddings(BaseModel, Embeddings):
         ),
     )
     max_batch_size: int = Field(default=_DEFAULT_BATCH_SIZE)
+    requests_session: Optional[Session] = Field(default=None, description="Provide a custom session for requests to contact your endpoint")
 
     def __init__(self, **kwargs: Any):
         """
@@ -91,11 +93,13 @@ class NVIDIAEmbeddings(BaseModel, Embeddings):
         base_url = kwargs.pop("nvidia_base_url", self.base_url)
         # allow nvidia_api_key as an alternative for api_key
         api_key = kwargs.pop("nvidia_api_key", kwargs.pop("api_key", None))
+        requests_session = kwargs.pop("requests_session", None)
         self._client = _NVIDIAClient(
             **({"base_url": base_url} if base_url else {}),  # only pass if set
             mdl_name=self.model,
             default_hosted_model_name=_DEFAULT_MODEL_NAME,
             **({"api_key": api_key} if api_key else {}),  # only pass if set
+            **({"get_session_fn": requests_session if requests_session else {}}), 
             infer_path="{base_url}/embeddings",
             cls=self.__class__.__name__,
         )
