@@ -94,12 +94,13 @@ class NVIDIAEmbeddings(BaseModel, Embeddings):
         # allow nvidia_api_key as an alternative for api_key
         api_key = kwargs.pop("nvidia_api_key", kwargs.pop("api_key", None))
         requests_session = kwargs.pop("requests_session", None)
+        get_session_fn = (lambda: requests_session) if requests_session else None
         self._client = _NVIDIAClient(
             **({"base_url": base_url} if base_url else {}),  # only pass if set
             mdl_name=self.model,
             default_hosted_model_name=_DEFAULT_MODEL_NAME,
             **({"api_key": api_key} if api_key else {}),  # only pass if set
-            **({"get_session_fn": requests_session if requests_session else {}}), 
+            **({"get_session_fn": get_session_fn} if get_session_fn else {}),
             infer_path="{base_url}/embeddings",
             cls=self.__class__.__name__,
         )
