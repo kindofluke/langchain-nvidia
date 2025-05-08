@@ -23,6 +23,9 @@ from typing import (
     Union,
 )
 
+import requests
+from requests import Session
+
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -269,6 +272,7 @@ class ChatNVIDIA(BaseChatModel):
     top_p: Optional[float] = Field(None, description="Top-p for distribution sampling")
     seed: Optional[int] = Field(None, description="The seed for deterministic results")
     stop: Optional[Sequence[str]] = Field(None, description="Stop words (cased)")
+    requests_session: Optional[Session] = Field(default=None, description="Provide a custom session for requests to contact your endpoint")
 
     def __init__(self, **kwargs: Any):
         """
@@ -308,11 +312,15 @@ class ChatNVIDIA(BaseChatModel):
         base_url = kwargs.pop("nvidia_base_url", self.base_url)
         # allow nvidia_api_key as an alternative for api_key
         api_key = kwargs.pop("nvidia_api_key", kwargs.pop("api_key", None))
+        requests_session = kwargs.pop("requests_session", None)
+        # Create custom session factory if a session was provided
+        get_session_fn = (lambda: requests_session) if requests_session else None
         self._client = _NVIDIAClient(
             **({"base_url": base_url} if base_url else {}),  # only pass if set
             mdl_name=self.model,
             default_hosted_model_name=_DEFAULT_MODEL_NAME,
             **({"api_key": api_key} if api_key else {}),  # only pass if set
+            **({"get_session_fn": get_session_fn} if get_session_fn else {}),
             infer_path="{base_url}/chat/completions",
             # instead of self.__class__.__name__ to assist in subclassing ChatNVIDIA
             cls="ChatNVIDIA",
